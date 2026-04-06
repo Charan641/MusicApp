@@ -1,0 +1,42 @@
+extends layout
+
+block content
+    .container
+        header(style="margin-bottom: 40px; text-align: center;")
+            h1(style="font-size: 3rem; margin-bottom: 10px;") Similar to #{artist}
+            p(style="color: var(--text-muted); font-size: 1.2rem;") Discover tracks like your favorites
+
+        if songs.length === 0
+            .empty-state
+                i.fas.fa-music
+                h2 No recommendations found for this artist
+                p Try playing a different track to see more!
+                a(href="/", style="display:inline-block; margin-top:20px; padding:12px 25px; background:var(--primary); color:white; border-radius:30px; font-weight:600;") Back to Home
+        else
+            section#songs-list.grid-layout
+                each song in songs
+                    - const isLiked = (favorites || []).find(f => f.songId == song.id)
+                    .song-card(data-id=song.id, data-audio=song.audio, data-title=song.name, data-artist=song.artist_name, data-image=song.image || 'https://via.placeholder.com/300')
+                        .card-image-wrap
+                            img(src=song.image || 'https://via.placeholder.com/300', alt=song.name)
+                            button.play-btn
+                                i.fas.fa-play
+
+                        .card-content
+                            h3
+                                a(href="#")= song.name
+                            p= song.artist_name
+
+                            .card-footer
+                                button.add-playlist-btn(data-id=song.id) ➕
+
+                                button.like-btn(
+                                    data-id=song.id,
+                                    class=isLiked ? 'liked' : ''
+                                )
+                                    i(class=isLiked ? 'fas fa-heart' : 'far fa-heart')
+
+                                span.duration #{Math.floor(song.duration / 60)}:#{(song.duration % 60).toString().padStart(2, '0')}
+
+        div(style="text-align: center; margin-top: 50px;")
+            a(href="/", style="color: var(--text-muted); text-decoration: underline;") Back to Home

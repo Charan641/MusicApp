@@ -1,21 +1,69 @@
 extends layout
 
 block content
+
+    // 🔝 HEADER
+    header(style="display:flex; justify-content:space-between; align-items:center; padding:15px 30px; background:#111; color:white;")
+        div
+            h3(style="margin:0;") 🎧 Music App
+
+        if user
+            div
+                span(style="margin-right:15px;") Welcome #{user.username}
+                a(
+                    href="/logout",
+                    style="color:white; text-decoration:none; background:#9400ff; padding:8px 12px; border-radius:8px;"
+                ) Logout
+
+    // 🎧 HERO
     section.hero
         h1 Explore Your Music
         p Discover new tracks from the Jamendo API
-    
+
+    // 🔍 SEARCH BAR
+    section(style="text-align:center; margin-top:20px;")
+        form(method="GET", action="/")
+            input(
+                type="text",
+                name="search",
+                placeholder="Search songs or artists...",
+                value=search || '',
+                style="padding:14px; width:420px; border-radius:12px; border:none; font-size:16px;"
+            )
+            button(
+                type="submit",
+                style="padding:14px 20px; margin-left:10px; border:none; background:#9400ff; color:white; border-radius:12px; font-size:15px;"
+            ) Search
+
+    // ❗ No results
+    if songs.length === 0
+        .empty-state
+            i.fas.fa-search
+            h2 No songs found
+            p Try searching something else
+
+    // 🎵 SONG LIST
     section#songs-list.grid-layout
         each song in songs
+            - const isLiked = (favorites || []).find(f => f.songId == song.id)
             .song-card(data-id=song.id, data-audio=song.audio, data-title=song.name, data-artist=song.artist_name, data-image=song.image || 'https://via.placeholder.com/300')
                 .card-image-wrap
                     img(src=song.image || 'https://via.placeholder.com/300', alt=song.name)
-                    button.play-btn: i.fas.fa-play
+                    button.play-btn
+                        i.fas.fa-play
+
                 .card-content
-                    h3: a(href="#")= song.name
+                    h3
+                        a(href="#")= song.name
                     p= song.artist_name
+
                     .card-footer
-                        - const isLiked = favorites.find(f => f.id === song.id)
-                        button.like-btn(data-id=song.id, title="Like", class=isLiked ? 'liked' : '')
+                        button.add-playlist-btn(data-id=song.id) ➕
+
+                        button.like-btn(
+                            data-id=song.id,
+                            class=isLiked ? 'liked' : ''
+                        )
                             i(class=isLiked ? 'fas fa-heart' : 'far fa-heart')
+
                         span.duration #{Math.floor(song.duration / 60)}:#{(song.duration % 60).toString().padStart(2, '0')}

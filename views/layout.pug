@@ -40,9 +40,9 @@ html(lang="en")
             }
 
             .container {
-                max-width: 1200px;
+                max-width: 1400px;
                 margin: 0 auto;
-                padding: 20px;
+                padding: 20px 30px;
             }
 
             /* --- Header --- */
@@ -84,52 +84,53 @@ html(lang="en")
             /* --- Hero --- */
             .hero {
                 text-align: center;
-                padding: 60px 20px;
+                padding: 80px 20px 40px;
             }
 
             .hero h1 {
-                font-size: 3.5rem;
-                margin-bottom: 15px;
-                background: linear-gradient(90deg, #9400ff, #00e5ff);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
+                font-size: 3.8rem;
             }
 
             .hero p {
-                color: var(--text-muted);
-                font-size: 1.2rem;
+                font-size: 1.3rem;
             }
 
             /* --- Grid Layout --- */
             .grid-layout {
                 display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                gap: 25px;
-                padding: 20px 0;
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 35px;
+                padding: 30px 0;
             }
 
             /* --- Song Card --- */
             .song-card {
                 background: var(--card-bg);
-                border-radius: 12px;
-                padding: 15px;
-                transition: transform 0.3s ease, background 0.3s ease;
+                border-radius: 18px;
+                padding: 18px;
+                border: 1px solid #333;
+                transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
                 cursor: pointer;
-                border: 1px solid transparent;
+                position: relative;
             }
 
-            .song-card:hover {
-                transform: translateY(-5px);
+            .song-card:hover, .song-card.active {
+                transform: translateY(-8px) scale(1.02);
                 background: #252525;
                 border-color: var(--primary);
+                box-shadow: 0 10px 30px rgba(148, 0, 255, 0.3);
+            }
+
+            .song-card.active {
+                border-width: 2px;
             }
 
             .card-image-wrap {
                 position: relative;
-                border-radius: 8px;
+                border-radius: 14px;
                 overflow: hidden;
                 aspect-ratio: 1/1;
-                margin-bottom: 12px;
+                margin-bottom: 15px;
             }
 
             .card-image-wrap img {
@@ -139,22 +140,9 @@ html(lang="en")
             }
 
             .play-btn {
-                position: absolute;
-                bottom: 10px;
-                right: 10px;
-                width: 45px;
-                height: 45px;
-                border-radius: 50%;
-                background: var(--primary);
-                color: white;
-                border: none;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                opacity: 0;
-                transform: scale(0.8);
-                transition: all 0.3s ease;
-                box-shadow: 0 4px 15px rgba(148, 0, 255, 0.4);
+                width: 60px;
+                height: 60px;
+                font-size: 1.3rem;
             }
 
             .song-card:hover .play-btn {
@@ -163,16 +151,12 @@ html(lang="en")
             }
 
             .card-content h3 {
-                font-size: 1.1rem;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                margin-bottom: 5px;
+                font-size: 1.3rem;
+                margin-bottom: 6px;
             }
 
             .card-content p {
-                color: var(--text-muted);
-                font-size: 0.9rem;
+                font-size: 1rem;
             }
 
             .card-footer {
@@ -210,9 +194,9 @@ html(lang="en")
 
             .player-bar .container {
                 display: flex;
-                justify-content: space-between;
                 align-items: center;
-                padding: 0 2rem;
+                justify-content: space-between;
+                gap: 20px;
             }
 
             #current-song-info {
@@ -223,9 +207,9 @@ html(lang="en")
             }
 
             #current-album-art {
-                width: 50px;
-                height: 50px;
-                border-radius: 6px;
+                width: 70px;
+                height: 70px;
+                border-radius: 10px;
             }
 
             .song-details h4 {
@@ -241,14 +225,42 @@ html(lang="en")
             .controls {
                 flex-grow: 1;
                 display: flex;
+                align-items: center;
                 justify-content: center;
+                gap: 12px;
             }
 
             audio {
                 width: 100%;
                 max-width: 600px;
-                height: 40px;
-                filter: invert(100%) hue-rotate(180deg) brightness(1.5);
+                height: 45px;
+            }
+
+            .nav-btn {
+                background: transparent;
+                border: 2px solid #444;
+                color: var(--text);
+                width: 42px;
+                height: 42px;
+                border-radius: 50%;
+                font-size: 1.1rem;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .nav-btn:hover:not(:disabled) {
+                background: var(--primary);
+                border-color: var(--primary);
+                transform: scale(1.1);
+            }
+
+            .nav-btn:disabled {
+                opacity: 0.3;
+                cursor: not-allowed;
             }
 
             .recommendations-trigger {
@@ -320,152 +332,218 @@ html(lang="en")
         main.container
             block content
 
-        footer.player-bar
-            .container
-                #current-song-info
-                    img#current-album-art(src="https://via.placeholder.com/60", alt="Album Art")
-                    .song-details
-                        h4#current-track-title Select a track
-                        p#current-track-artist ---
-                
-                .controls
-                    audio#audio-player(controls, autoplay)
-                        source(src="", type="audio/mpeg")
-                
-                .recommendations-trigger
-                    button#show-recommendations Recommendations
+        if user
+            footer.player-bar
+                .container
+                    #current-song-info
+                        img#current-album-art(src="https://via.placeholder.com/60", alt="Album Art")
+                        .song-details
+                            h4#current-track-title Select a track
+                            p#current-track-artist ---
+                    
+                    .controls
+                        button#prev-btn.nav-btn(title="Previous")
+                            i.fas.fa-step-backward
+                        audio#audio-player(controls, autoplay)
+                            source(src="", type="audio/mpeg")
+                        button#next-btn.nav-btn(title="Next")
+                            i.fas.fa-step-forward
+                    
+                    .recommendations-trigger
+                        button#show-recommendations Recommendations
 
-        #recommendations-panel.hidden
-            .container
-                h3 Similar Songs
-                #recommendations-list.grid-layout
+        if user
+            #recommendations-panel.hidden
+                .container
+                    h3 Looking for similar tracks?
+                    p(style="margin-bottom: 20px; color: var(--text-muted);") Discover new music based on your taste.
+                    a#view-all-recommendations(href="/", style="display:inline-block; padding:12px 25px; background:var(--primary); color:white; border-radius:30px; font-weight:600;") View Recommendations
         
-        script.
-            document.addEventListener('DOMContentLoaded', () => {
-                const audioPlayer = document.getElementById('audio-player');
-                const currentAlbumArt = document.getElementById('current-album-art');
-                const currentTrackTitle = document.getElementById('current-track-title');
-                const currentTrackArtist = document.getElementById('current-track-artist');
-                const showRecommendationsBtn = document.getElementById('show-recommendations');
-                const recommendationsPanel = document.getElementById('recommendations-panel');
-                const recommendationsList = document.getElementById('recommendations-list');
+        if user
+            script.
+                document.addEventListener('DOMContentLoaded', () => {
+                    const audioPlayer = document.getElementById('audio-player');
+                    const currentAlbumArt = document.getElementById('current-album-art');
+                    const currentTrackTitle = document.getElementById('current-track-title');
+                    const currentTrackArtist = document.getElementById('current-track-artist');
+                    const showRecommendationsBtn = document.getElementById('show-recommendations');
+                    const recommendationsPanel = document.getElementById('recommendations-panel');
+                    const recommendationsList = document.getElementById('recommendations-list');
 
-                // --- PLAY FUNCTIONALITY ---
-                function playTrack(trackData) {
-                    audioPlayer.src = trackData.audio;
-                    audioPlayer.play();
+                    let playlist = [];
+                    let currentIndex = 0;
+                    let currentArtist = '';
 
-                    currentTrackTitle.innerText = trackData.title;
-                    currentTrackArtist.innerText = trackData.artist;
-                    currentAlbumArt.src = trackData.image;
+                    const prevBtn = document.getElementById('prev-btn');
+                    const nextBtn = document.getElementById('next-btn');
 
-                    fetchRecommendations(trackData.artist);
-                }
-
-                document.addEventListener('click', (e) => {
-                    const playBtn = e.target.closest('.play-btn');
-                    if (playBtn) {
-                        const card = playBtn.closest('.song-card');
-                        const trackData = {
-                            id: card.dataset.id,
-                            audio: card.dataset.audio,
-                            title: card.dataset.title,
-                            artist: card.dataset.artist,
-                            image: card.dataset.image
-                        };
-                        playTrack(trackData);
+                    function updateNavButtons() {
+                        prevBtn.disabled = currentIndex <= 0;
+                        nextBtn.disabled = currentIndex >= playlist.length - 1;
                     }
-                });
 
-                // --- LIKE FUNCTIONALITY ---
-                document.addEventListener('click', async (e) => {
-                    const likeBtn = e.target.closest('.like-btn');
-                    if (likeBtn) {
-                        const card = likeBtn.closest('.song-card');
-                        const songData = {
-                            id: card.dataset.id,
-                            name: card.dataset.title,
-                            artist_name: card.dataset.artist,
-                            audio: card.dataset.audio,
-                            image: card.dataset.image
-                        };
+                    prevBtn.disabled = true;
+                    nextBtn.disabled = true;
 
-                        try {
-                            const response = await fetch('/favorite', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(songData)
-                            });
-                            const result = await response.json();
+                    function playTrack(trackData, index = null) {
+                        if (index !== null) currentIndex = index;
+                        audioPlayer.src = trackData.audio;
+                        audioPlayer.play();
+                        currentTrackTitle.innerText = trackData.title;
+                        currentTrackArtist.innerText = trackData.artist;
+                        currentAlbumArt.src = trackData.image;
+                        currentArtist = trackData.artist;
+                        updateRecommendationsLink(trackData.artist);
+                        updateNavButtons();
+                    }
 
-                            if (result.success) {
-                                if (result.action === 'added') {
-                                    likeBtn.classList.add('liked');
-                                    likeBtn.innerHTML = '<i class="fas fa-heart"></i>';
-                                } else {
-                                    likeBtn.classList.remove('liked');
-                                    likeBtn.innerHTML = '<i class="far fa-heart"></i>';
-                                    if (window.location.pathname === '/favorites') {
-                                        card.style.opacity = '0';
-                                        setTimeout(() => card.remove(), 300);
-                                    }
+                    document.addEventListener('click', (e) => {
+                        if (e.target.closest('.like-btn') || e.target.closest('.add-playlist-btn')) return;
+                        const card = e.target.closest('.song-card');
+                        if (card) {
+                            const trackData = {
+                                id: card.dataset.id,
+                                audio: card.dataset.audio,
+                                title: card.dataset.title,
+                                artist: card.dataset.artist,
+                                image: card.dataset.image
+                            };
+                            const existsIndex = playlist.findIndex(s => s.id == trackData.id);
+                            if (existsIndex === -1) {
+                                playlist.push(trackData);
+                                currentIndex = playlist.length - 1;
+                            } else {
+                                currentIndex = existsIndex;
+                            }
+                            document.querySelectorAll('.song-card').forEach(c => c.classList.remove('active'));
+                            card.classList.add('active');
+                            playTrack(trackData, currentIndex);
+                        }
+                    });
+
+                    audioPlayer.addEventListener('ended', () => {
+                        if (playlist.length > 0 && currentIndex < playlist.length - 1) {
+                            currentIndex++;
+                            playTrack(playlist[currentIndex]);
+                        } else {
+                            updateNavButtons();
+                        }
+                    });
+
+                    prevBtn.addEventListener('click', () => {
+                        if (currentIndex > 0) {
+                            currentIndex--;
+                            playTrack(playlist[currentIndex]);
+                        }
+                    });
+
+                    nextBtn.addEventListener('click', () => {
+                        if (currentIndex < playlist.length - 1) {
+                            currentIndex++;
+                            playTrack(playlist[currentIndex]);
+                        }
+                    });
+
+                    document.addEventListener('click', async (e) => {
+                        const likeBtn = e.target.closest('.like-btn');
+                        if (likeBtn) {
+                            const card = likeBtn.closest('.song-card');
+                            const songData = {
+                                songId: card.dataset.id,
+                                title: card.dataset.title,
+                                artist: card.dataset.artist,
+                                audioUrl: card.dataset.audio,
+                                image: card.dataset.image
+                            };
+                            try {
+                                const response = await fetch('/like', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(songData)
+                                });
+                                if (response.ok) {
+                                    likeBtn.classList.toggle('liked');
+                                    likeBtn.innerHTML = likeBtn.classList.contains('liked')
+                                        ? '<i class="fas fa-heart"></i>'
+                                        : '<i class="far fa-heart"></i>';
                                 }
+                            } catch (err) {
+                                console.error(err);
+                            }
+                        }
+                    });
+
+                    document.addEventListener('click', (e) => {
+                        const btn = e.target.closest('.add-playlist-btn');
+                        if (btn) {
+                            const card = btn.closest('.song-card');
+                            const trackData = {
+                                id: card.dataset.id,
+                                audio: card.dataset.audio,
+                                title: card.dataset.title,
+                                artist: card.dataset.artist,
+                                image: card.dataset.image
+                            };
+                            const exists = playlist.find(s => s.id == trackData.id);
+                            if (!exists) {
+                                playlist.push(trackData);
+                                btn.innerText = '✔ Added';
+                            }
+                        }
+                    });
+
+                    function updateRecommendationsLink(artist) {
+                        const viewBtn = document.getElementById('view-all-recommendations');
+                        if (viewBtn) viewBtn.href = `/recommendations/${encodeURIComponent(artist)}`;
+                        showRecommendationsBtn.classList.add('pulse');
+                    }
+
+                    // --- RECOMMENDATIONS: FETCH & QUEUE SIMILAR SONGS ---
+                    showRecommendationsBtn.addEventListener('click', async () => {
+                        if (!currentArtist) {
+                            showRecommendationsBtn.innerText = '⚠ Play a song first!';
+                            setTimeout(() => { showRecommendationsBtn.innerText = 'Recommendations'; }, 2000);
+                            return;
+                        }
+                        showRecommendationsBtn.innerText = '⏳ Loading...';
+                        showRecommendationsBtn.disabled = true;
+                        try {
+                            const res = await fetch(`/api/similar?artist=${encodeURIComponent(currentArtist)}`);
+                            const data = await res.json();
+                            const tracks = data.tracks || [];
+                            let added = 0;
+                            tracks.forEach(track => {
+                                if (!playlist.find(s => s.id == track.id)) {
+                                    playlist.push({ id: track.id, audio: track.audio, title: track.name, artist: track.artist_name, image: track.image || 'https://via.placeholder.com/300' });
+                                    added++;
+                                }
+                            });
+                            showRecommendationsBtn.innerText = added > 0 ? `✅ ${added} added to queue!` : '😔 No similar found';
+                            showRecommendationsBtn.disabled = false;
+                            if (audioPlayer.paused && added > 0) {
+                                currentIndex = playlist.length - added;
+                                playTrack(playlist[currentIndex], currentIndex);
                             }
                         } catch (err) {
-                            console.error('Error toggling favorite:', err);
+                            console.error(err);
+                            showRecommendationsBtn.innerText = '❌ Error';
+                            showRecommendationsBtn.disabled = false;
                         }
-                    }
-                });
+                        setTimeout(() => { showRecommendationsBtn.innerText = 'Recommendations'; }, 3000);
+                    });
 
-                // --- RECOMMENDATIONS LOGIC ---
-                async function fetchRecommendations(artist) {
-                    try {
-                        const response = await fetch(`/recommendations/${encodeURIComponent(artist)}`);
-                        const tracks = await response.json();
-
-                        recommendationsList.innerHTML = '';
-
-                        if (tracks && tracks.length > 0) {
-                            tracks.forEach(track => {
-                                const card = createSongCard(track);
-                                recommendationsList.appendChild(card);
-                            });
-                            showRecommendationsBtn.classList.add('pulse');
-                        } else {
-                            recommendationsList.innerHTML = '<p class="empty-state">No recommendations found for this artist.</p>';
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'ArrowRight') {
+                            if (currentIndex < playlist.length - 1) {
+                                currentIndex++;
+                                playTrack(playlist[currentIndex]);
+                            }
                         }
-                    } catch (err) {
-                        console.error('Error fetching recommendations:', err);
-                    }
-                }
-
-                function createSongCard(track) {
-                    const div = document.createElement('div');
-                    div.className = 'song-card';
-                    div.dataset.id = track.id;
-                    div.dataset.audio = track.audio;
-                    div.dataset.title = track.name;
-                    div.dataset.artist = track.artist_name;
-                    div.dataset.image = track.image || 'https://via.placeholder.com/300';
-
-                    div.innerHTML = `
-                        <div class="card-image-wrap">
-                            <img src="${track.image || 'https://via.placeholder.com/300'}" alt="${track.name}">
-                            <button class="play-btn"><i class="fas fa-play"></i></button>
-                        </div>
-                        <div class="card-content">
-                            <h3>${track.name}</h3>
-                            <p>${track.artist_name}</p>
-                            <div class="card-footer">
-                                <button class="like-btn" data-id="${track.id}"><i class="far fa-heart"></i></button>
-                            </div>
-                        </div>
-                    `;
-                    return div;
-                }
-
-                showRecommendationsBtn.addEventListener('click', () => {
-                    recommendationsPanel.classList.toggle('hidden');
-                    showRecommendationsBtn.innerText = recommendationsPanel.classList.contains('hidden') ? 'Recommendations' : 'Hide Panel';
+                        if (e.key === 'ArrowLeft') {
+                            if (currentIndex > 0) {
+                                currentIndex--;
+                                playTrack(playlist[currentIndex]);
+                            }
+                        }
+                    });
                 });
-            });

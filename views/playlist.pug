@@ -1,0 +1,39 @@
+extends layout
+
+block content
+    section.hero
+        h1 My Playlist
+        p Songs in order (play queue)
+
+    if songs && songs.length > 0
+        section.grid-layout
+            each song, index in songs
+                .song-card(
+                    data-id=song.id,
+                    data-audio=song.audio,
+                    data-title=song.name,
+                    data-artist=song.artist_name,
+                    data-image=song.image || 'https://via.placeholder.com/300'
+                )
+                    .card-image-wrap
+                        img(
+                            src=song.image || 'https://via.placeholder.com/300',
+                            alt=song.name
+                        )
+                        button.play-btn
+                            i.fas.fa-play
+
+                    .card-content
+                        h3 #{index + 1}. #{song.name}
+                        p= song.artist_name
+
+                        .card-footer
+                            button.remove-btn(
+                                data-id=song.id,
+                                style="background:#ff3d00; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer;"
+                            ) Remove
+    else
+        .empty-state
+            i.fas.fa-music
+            h2 No songs in playlist
+            p Add songs from home page 🎧

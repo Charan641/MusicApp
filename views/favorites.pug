@@ -3,20 +3,41 @@ extends layout
 block content
     section.hero
         h1 My Favorite Songs
-        p Your curated playlist (Stored In-Memory)
-    
+        p Your curated playlist ❤️
+
     if songs.length > 0
         section#songs-list.grid-layout
             each song in songs
-                .song-card(data-id=song.id, data-audio=song.audio, data-title=song.name, data-artist=song.artist_name, data-image=song.image || 'https://via.placeholder.com/300')
+                .song-card(
+                    data-id=song.songId,
+                    data-audio=song.audioUrl,
+                    data-title=song.title,
+                    data-artist=song.artist,
+                    data-image=song.image || 'https://via.placeholder.com/300'
+                )
                     .card-image-wrap
-                        img(src=song.image || 'https://via.placeholder.com/300', alt=song.name)
-                        button.play-btn: i.fas.fa-play
+                        img(src=song.image || 'https://via.placeholder.com/300', alt=song.title)
+                        button.play-btn
+                            i.fas.fa-play
+
                     .card-content
-                        h3= song.name
-                        p= song.artist_name
+                        h3 #{song.title}
+                        p #{song.artist}
+
                         .card-footer
-                            button.like-btn.liked(data-id=song.id, title="Unlike"): i.fas.fa-heart
+                            // ❤️ Remove from favorites (UI only for now)
+                            button.like-btn.liked(
+                                data-id=song.songId,
+                                title="Remove from Favorites"
+                            )
+                                i.fas.fa-heart
+
+                            // ➕ Add to playlist
+                            button.add-playlist-btn(
+                                data-id=song.songId,
+                                title="Add to Playlist"
+                            ) ➕
+
     else
         .empty-state
             i.fas.fa-heart-broken
