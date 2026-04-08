@@ -87,15 +87,22 @@ pipeline {
                     sshUserPrivateKey(credentialsId: EC2_SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY_PATH')
                 ]) {
                     bat """
-                    ssh -i "%SSH_KEY_PATH%" -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_INSTANCE_IP} ^
-                    "docker login -u ${DOCKER_USER} -p ${DOCKER_PW} && ^
-                    docker pull ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG} && ^
-                    docker stop ${APP_NAME} || true && ^
-                    docker rm ${APP_NAME} || true && ^
-                    docker run -d -p 3000:3000 --name ${APP_NAME} ^
-                    -e MONGO_URI='${MONGO_URI}' ^
-                    -e JAMENDO_CLIENT_ID='${JAMENDO_CLIENT_ID}' ^
-                    ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
+                    @echo off
+                    :: Fix SSH key permissions for Windows OpenSSH
+                    icacls "%SSH_KEY_PATH%" /inheritance:r >nul
+                    icacls "%SSH_KEY_PATH%" /grant:r "%USERNAME%:(R)" >nul
+                    
+                    :: Run deployment on EC2
+                    :: We use double quotes for the SSH command and single quotes for the internal Linux shell
+                    ssh -i "%SSH_KEY_PATH%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_INSTANCE_IP% ^
+                    "echo '%DOCKER_PW%' | docker login -u %DOCKER_USER% --password-stdin && ^
+                    docker pull %DOCKER_REGISTRY%/%APP_NAME%:%IMAGE_TAG% && ^
+                    docker stop %APP_NAME% || true && ^
+                    docker rm %APP_NAME% || true && ^
+                    docker run -d -p 3000:3000 --name %APP_NAME% ^
+                    -e MONGO_URI='%MONGO_URI%' ^
+                    -e JAMENDO_CLIENT_ID='%JAMENDO_CLIENT_ID%' ^
+                    %DOCKER_REGISTRY%/%APP_NAME%:%IMAGE_TAG%"
                     """
                 }
             }
