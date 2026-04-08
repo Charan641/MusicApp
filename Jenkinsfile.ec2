@@ -78,17 +78,21 @@ pipeline {
             steps {
                 echo '🚀 Deploying to EC2...'
 
-                sshagent([EC2_SSH_CREDENTIALS_ID]) {
-                    bat """
-                    ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_INSTANCE_IP} ^
-                    "docker pull ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG} && \
-                    docker stop ${APP_NAME} || true && \
-                    docker rm ${APP_NAME} || true && \
-                    docker run -d -p 3000:3000 --name ${APP_NAME} \
-                    -e MONGO_URI='${MONGO_URI}' \
-                    -e JAMENDO_CLIENT_ID='${JAMENDO_CLIENT_ID}' \
-                    ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
-                    """
+                // Use DockerHub credentials to log in on the EC2 instance
+                withCredentials([usernamePassword(credentialsId: DOCKER_CREDS_ID, passwordVariable: 'DOCKER_PW', usernameVariable: 'DOCKER_USER')]) {
+                    sshagent([EC2_SSH_CREDENTIALS_ID]) {
+                        bat """
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_INSTANCE_IP} ^
+                        "docker login -u ${DOCKER_USER} -p ${DOCKER_PW} && \
+                        docker pull ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG} && \
+                        docker stop ${APP_NAME} || true && \
+                        docker rm ${APP_NAME} || true && \
+                        docker run -d -p 3000:3000 --name ${APP_NAME} \
+                        -e MONGO_URI='${MONGO_URI}' \
+                        -e JAMENDO_CLIENT_ID='${JAMENDO_CLIENT_ID}' \
+                        ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
+                        """
+                    }
                 }
             }
         }
