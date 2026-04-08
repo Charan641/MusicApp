@@ -20,7 +20,7 @@ pipeline {
         
         // Application Secrets
         MONGO_URI = credentials('mongo-uri')
-        JAMENDO_CLIENT_ID = credentials('jamendo-client-id')
+        JAMENDO_CLIENT_ID = 'cfbc74eb'
     }
 
     stages {
