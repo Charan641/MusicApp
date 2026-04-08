@@ -86,12 +86,10 @@ pipeline {
                     sshUserPrivateKey(credentialsId: EC2_SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY_PATH')
                 ]) {
                     powershell """
-                    # 1. Fix SSH Key Permissions (PowerShell is more reliable for this)
-                    \$keyPath = "${env.SSH_KEY_PATH}"
-                    # Create a copy with strict permissions if needed, or just fix current
+                    # 1. Fix SSH Key Permissions
+                    \$keyPath = \$env:SSH_KEY_PATH
                     \$acl = Get-Acl \$keyPath
                     \$acl.SetAccessRuleProtection(\$true, \$false)
-                    Set-Acl \$keyPath \$acl
                     
                     \$currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
                     \$accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule(\$currentUser, "Read", "Allow")
@@ -99,17 +97,16 @@ pipeline {
                     Set-Acl \$keyPath \$acl
 
                     # 2. Build the SSH command string
-                    # Construction in PS avoids '&' breaking the shell
-                    \$docker_login = "echo '${env.DOCKER_PW}' | docker login -u ${env.DOCKER_USER} --password-stdin"
-                    \$docker_pull  = "docker pull ${env.DOCKER_REGISTRY}/${env.APP_NAME}:${env.IMAGE_TAG}"
-                    \$docker_stop  = "docker stop ${env.APP_NAME} || true"
-                    \$docker_rm    = "docker rm ${env.APP_NAME} || true"
-                    \$docker_run   = "docker run -d -p 3000:3000 --name ${env.APP_NAME} -e MONGO_URI='${env.MONGO_URI}' -e JAMENDO_CLIENT_ID='${env.JAMENDO_CLIENT_ID}' ${env.DOCKER_REGISTRY}/${env.APP_NAME}:${env.IMAGE_TAG}"
+                    \$docker_login = "echo '\$env:DOCKER_PW' | docker login -u \$env:DOCKER_USER --password-stdin"
+                    \$docker_pull  = "docker pull \$env:DOCKER_REGISTRY/\$env:APP_NAME:\$env:IMAGE_TAG"
+                    \$docker_stop  = "docker stop \$env:APP_NAME || true"
+                    \$docker_rm    = "docker rm \$env:APP_NAME || true"
+                    \$docker_run   = "docker run -d -p 3000:3000 --name \$env:APP_NAME -e MONGO_URI='\$env:MONGO_URI' -e JAMENDO_CLIENT_ID='\$env:JAMENDO_CLIENT_ID' \$env:DOCKER_REGISTRY/\$env:APP_NAME:\$env:IMAGE_TAG"
 
                     \$remoteCmd = "\$docker_login && \$docker_pull && \$docker_stop && \$docker_rm && \$docker_run"
 
                     # 3. Execute SSH
-                    ssh -i "\$keyPath" -o StrictHostKeyChecking=no ${env.EC2_USER}@${env.EC2_INSTANCE_IP} "\$remoteCmd"
+                    ssh -i "\$keyPath" -o StrictHostKeyChecking=no \$env:EC2_USER@\$env:EC2_INSTANCE_IP "\$remoteCmd"
                     """
                 }
             }
