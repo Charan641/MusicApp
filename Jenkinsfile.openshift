@@ -32,14 +32,10 @@ pipeline {
             steps {
                 script {
                     echo 'Running SonarQube analysis...'
-                    // Requires "SonarQube Scanner" plugin and configured SonarQube server in Jenkins
+                    // Find the tool named 'SonarScanner'
+                    def scannerHome = tool 'SonarScanner'
                     withSonarQubeEnv('SonarQube') { 
-                        bat """
-                            sonar-scanner ^
-                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} ^
-                            -Dsonar.projectName="Music App" ^
-                            -Dsonar.sources=.
-                        """
+                        bat "${scannerHome}/bin/sonar-scanner.bat"
                     }
                 }
             }

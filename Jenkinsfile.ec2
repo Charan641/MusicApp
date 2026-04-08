@@ -6,39 +6,41 @@ pipeline {
         APP_NAME = 'musicapp'
         IMAGE_TAG = "v${env.BUILD_ID}"
         
-        // Docker configuration
-        DOCKER_REGISTRY = 'rajesh200402' // e.g., dockerhub username
+        // Docker
+        DOCKER_REGISTRY = 'rajesh200402'
         DOCKER_CREDS_ID = 'dockerhub-credentials'
         
-        // SonarQube configuration
+        // SonarQube
         SONAR_PROJECT_KEY = 'musicapp'
         
-        // EC2 configuration
+        // EC2
         EC2_INSTANCE_IP = '3.239.120.244'
-        EC2_USER = 'ubuntu' // or ec2-user depending on your AMI
-        EC2_SSH_CREDENTIALS_ID = 'ec2-ssh-key' // Jenkins Credentials ID for EC2 SSH key
+        EC2_USER = 'ubuntu'
+        EC2_SSH_CREDENTIALS_ID = 'ec2-ssh-key'
     }
 
     stages {
+
         stage('Checkout Code') {
             steps {
-                // Gets code from Git repository configured in Jenkins job
                 checkout scm
-                echo 'Code checkout completed successfully.'
+                echo '✅ Code checkout completed'
             }
         }
 
-        stage('SonarQube Quality Check') {
+        stage('SonarQube Analysis') {
             steps {
                 script {
-                    echo 'Running SonarQube analysis...'
-                    // Requires "SonarQube Scanner" plugin and configured SonarQube server in Jenkins
-                    withSonarQubeEnv('SonarQube') { 
+                    echo '🔍 Running SonarQube analysis...'
+
+                    def scannerHome = tool 'SonarScanner'
+
+                    withSonarQubeEnv('SonarQube') {
                         bat """
-                            sonar-scanner ^
-                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} ^
-                            -Dsonar.projectName="Music App" ^
-                            -Dsonar.sources=.
+                        ${scannerHome}/bin/sonar-scanner.bat ^
+                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} ^
+                        -Dsonar.projectName=${APP_NAME} ^
+                        -Dsonar.sources=. ^
                         """
                     }
                 }
@@ -48,7 +50,6 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
-                    // Wait for SonarQube webhook to confirm quality gate status
                     waitForQualityGate abortPipeline: true
                 }
             }
@@ -57,7 +58,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    echo "Building Docker image: ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
+                    echo "🐳 Building Docker image..."
                     dockerImage = docker.build("${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}")
                 }
             }
@@ -66,10 +67,10 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    echo 'Pushing Docker image to registry...'
+                    echo '📤 Pushing Docker image...'
+
                     docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDS_ID) {
                         dockerImage.push()
-                        // Tag as latest as well
                         dockerImage.push('latest')
                     }
                 }
@@ -78,23 +79,34 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-                echo 'Deploying application to EC2 instance...'
-                // Deploying to EC2 via SSH
+                echo '🚀 Deploying to EC2...'
+
                 sshagent([EC2_SSH_CREDENTIALS_ID]) {
                     bat """
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_INSTANCE_IP} "docker pull ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG} && docker stop ${APP_NAME} || true && docker rm ${APP_NAME} || true && docker run -d -p 3000:3000 --name ${APP_NAME} ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
+                    ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_INSTANCE_IP} ^
+                    "docker pull ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG} && \
+                    docker stop ${APP_NAME} || true && \
+                    docker rm ${APP_NAME} || true && \
+                    docker run -d -p 3000:3000 --name ${APP_NAME} ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
                     """
                 }
             }
         }
+
+        stage('Cleanup') {
+            steps {
+                echo '🧹 Cleaning unused Docker images...'
+                bat "docker system prune -f"
+            }
+        }
     }
-    
+
     post {
         success {
-            echo "Pipeline executed successfully and deployed to EC2."
+            echo '🎉 Pipeline SUCCESS - Deployed to EC2'
         }
         failure {
-            echo "Pipeline failed."
+            echo '❌ Pipeline FAILED'
         }
     }
 }
