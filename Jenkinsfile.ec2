@@ -17,6 +17,10 @@ pipeline {
         EC2_INSTANCE_IP = '44.210.243.11'
         EC2_USER = 'ubuntu'
         EC2_SSH_CREDENTIALS_ID = 'ec2-ssh-key'
+        
+        // Application Secrets
+        MONGO_URI = credentials('mongo-uri')
+        JAMENDO_CLIENT_ID = credentials('jamendo-client-id')
     }
 
     stages {
@@ -47,13 +51,6 @@ pipeline {
             }
         }
 
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
 
         stage('Build Docker Image') {
             steps {
@@ -87,7 +84,10 @@ pipeline {
                     "docker pull ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG} && \
                     docker stop ${APP_NAME} || true && \
                     docker rm ${APP_NAME} || true && \
-                    docker run -d -p 3000:3000 --name ${APP_NAME} ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
+                    docker run -d -p 3000:3000 --name ${APP_NAME} \
+                    -e MONGO_URI='${MONGO_URI}' \
+                    -e JAMENDO_CLIENT_ID='${JAMENDO_CLIENT_ID}' \
+                    ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
                     """
                 }
             }

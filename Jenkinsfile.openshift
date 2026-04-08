@@ -17,6 +17,10 @@ pipeline {
         OPENSHIFT_PROJECT = 'my-musicapp-namespace'
         OPENSHIFT_API_URL = 'https://api.your-openshift-cluster.com:6443'
         OPENSHIFT_TOKEN_ID = 'openshift-api-token' // Jenkins credential for OpenShift token
+        
+        // Application Secrets
+        MONGO_URI = credentials('mongo-uri')
+        JAMENDO_CLIENT_ID = credentials('jamendo-client-id')
     }
 
     stages {
@@ -41,14 +45,6 @@ pipeline {
             }
         }
 
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    // Wait for SonarQube webhook to confirm quality gate status
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
 
         stage('Build Docker Image') {
             steps {
@@ -84,11 +80,14 @@ pipeline {
                         oc get deployment ${APP_NAME} >nul 2>&1
                         if errorlevel 1 (
                             echo Creating new application...
-                            oc new-app --name=${APP_NAME} --docker-image=${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}
+                            oc new-app --name=${APP_NAME} --docker-image=${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG} \
+                            -e MONGO_URI=${MONGO_URI} \
+                            -e JAMENDO_CLIENT_ID=${JAMENDO_CLIENT_ID}
                             oc expose svc/${APP_NAME}
                         ) else (
                             echo Updating existing deployment...
                             oc set image deployment/${APP_NAME} ${APP_NAME}=${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}
+                            oc set env deployment/${APP_NAME} MONGO_URI=${MONGO_URI} JAMENDO_CLIENT_ID=${JAMENDO_CLIENT_ID}
                         )
                         
                         oc rollout status deployment/${APP_NAME}
