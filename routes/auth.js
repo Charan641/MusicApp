@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const router = express.Router();
 const User = require('../models/User');
+const { sendEmail } = require('../utils/email');
 
 /**
  * 🔐 SIGNUP PAGE
@@ -40,6 +41,15 @@ router.post('/signup', async (req, res) => {
         try {
             const newUser = new User({ username, email, password: hashedPassword, likedSongs: [] });
             await newUser.save();
+
+            // ✅ Send welcome email asynchronously
+            sendEmail({
+                to: email,
+                subject: 'Welcome to MusicApp!',
+                text: `Hello ${username},\n\nThank you for signing up for MusicApp! We hope you enjoy the best tunes.`,
+                html: `<h3>Hello ${username},</h3><p>Thank you for signing up for <strong>MusicApp</strong>!</p><p>We hope you enjoy the best tunes.</p>`
+            }).catch(err => console.error('Failed to send welcome email:', err));
+
             res.redirect('/login');
         } catch (saveErr) {
             console.error('DB SAVE FAIL:', saveErr.message);
