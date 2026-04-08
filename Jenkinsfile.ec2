@@ -56,7 +56,10 @@ pipeline {
             steps {
                 script {
                     echo "🐳 Building Docker image..."
-                    dockerImage = docker.build("${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}")
+                    // Log in before building to avoid pull unauthorized errors
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDS_ID) {
+                        dockerImage = docker.build("${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}")
+                    }
                 }
             }
         }
