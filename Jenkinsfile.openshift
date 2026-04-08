@@ -1,0 +1,119 @@
+pipeline {
+    agent any
+
+    environment {
+        // Application
+        APP_NAME = 'musicapp'
+        IMAGE_TAG = "v${env.BUILD_ID}"
+        
+        // Docker configuration
+        DOCKER_REGISTRY = 'your-dockerhub-username'
+        DOCKER_CREDS_ID = 'dockerhub-credentials'
+        
+        // SonarQube configuration
+        SONAR_PROJECT_KEY = 'musicapp'
+        
+        // OpenShift configuration
+        OPENSHIFT_PROJECT = 'my-musicapp-namespace'
+        OPENSHIFT_API_URL = 'https://api.your-openshift-cluster.com:6443'
+        OPENSHIFT_TOKEN_ID = 'openshift-api-token' // Jenkins credential for OpenShift token
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                // Gets code from Git repository configured in Jenkins job
+                checkout scm
+                echo 'Code checkout completed successfully.'
+            }
+        }
+
+        stage('SonarQube Quality Check') {
+            steps {
+                script {
+                    echo 'Running SonarQube analysis...'
+                    // Requires "SonarQube Scanner" plugin and configured SonarQube server in Jenkins
+                    withSonarQubeEnv('SonarQube') { 
+                        sh '''
+                            sonar-scanner \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.projectName="Music App" \
+                            -Dsonar.sources=.
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    // Wait for SonarQube webhook to confirm quality gate status
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo "Building Docker image: ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
+                    dockerImage = docker.build("${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}")
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    echo 'Pushing Docker image to registry...'
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDS_ID) {
+                        dockerImage.push()
+                        // Tag as latest as well
+                        dockerImage.push('latest')
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to OpenShift') {
+            steps {
+                echo 'Deploying application to OpenShift cluster...'
+                // Login to OpenShift and apply deployments
+                withCredentials([string(credentialsId: OPENSHIFT_TOKEN_ID, variable: 'OC_TOKEN')]) {
+                    sh """
+                        # Authenticate to the OpenShift cluster
+                        oc login --server=${OPENSHIFT_API_URL} --token=\${OC_TOKEN} --insecure-skip-tls-verify
+                        
+                        # Select the target project
+                        oc project ${OPENSHIFT_PROJECT}
+                        
+                        # Check if deployment already exists
+                        if oc get deployment ${APP_NAME} > /dev/null 2>&1; then
+                            echo "Updating existing deployment..."
+                            oc set image deployment/${APP_NAME} ${APP_NAME}=${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}
+                        else
+                            echo "Creating new application..."
+                            oc new-app --name=${APP_NAME} --docker-image=${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}
+                            
+                            # Create a route if it doesn't exist
+                            oc expose svc/${APP_NAME} || true
+                        fi
+                        
+                        # Wait for rollout to complete
+                        oc rollout status deployment/${APP_NAME}
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo "Pipeline executed successfully and deployed to OpenShift."
+        }
+        failure {
+            echo "Pipeline failed."
+        }
+    }
+}
