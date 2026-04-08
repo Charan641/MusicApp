@@ -34,12 +34,12 @@ pipeline {
                     echo 'Running SonarQube analysis...'
                     // Requires "SonarQube Scanner" plugin and configured SonarQube server in Jenkins
                     withSonarQubeEnv('SonarQube') { 
-                        sh '''
-                            sonar-scanner \
-                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                            -Dsonar.projectName="Music App" \
+                        bat """
+                            sonar-scanner ^
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} ^
+                            -Dsonar.projectName="Music App" ^
                             -Dsonar.sources=.
-                        '''
+                        """
                     }
                 }
             }
@@ -81,19 +81,8 @@ pipeline {
                 echo 'Deploying application to EC2 instance...'
                 // Deploying to EC2 via SSH
                 sshagent([EC2_SSH_CREDENTIALS_ID]) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_INSTANCE_IP} '
-                            # Pull the latest image
-                            docker pull ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}
-                            
-                            # Stop and remove existing container if it exists
-                            docker stop ${APP_NAME} || true
-                            docker rm ${APP_NAME} || true
-                            
-                            # Run the new container
-                            # Assuming your Node app runs on port 3000
-                            docker run -d -p 3000:3000 --name ${APP_NAME} ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}
-                        '
+                    bat """
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_INSTANCE_IP} "docker pull ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG} && docker stop ${APP_NAME} || true && docker rm ${APP_NAME} || true && docker run -d -p 3000:3000 --name ${APP_NAME} ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
                     """
                 }
             }

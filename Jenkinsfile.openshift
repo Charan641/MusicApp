@@ -34,12 +34,12 @@ pipeline {
                     echo 'Running SonarQube analysis...'
                     // Requires "SonarQube Scanner" plugin and configured SonarQube server in Jenkins
                     withSonarQubeEnv('SonarQube') { 
-                        sh '''
-                            sonar-scanner \
-                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                            -Dsonar.projectName="Music App" \
+                        bat """
+                            sonar-scanner ^
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} ^
+                            -Dsonar.projectName="Music App" ^
                             -Dsonar.sources=.
-                        '''
+                        """
                     }
                 }
             }
@@ -81,26 +81,20 @@ pipeline {
                 echo 'Deploying application to OpenShift cluster...'
                 // Login to OpenShift and apply deployments
                 withCredentials([string(credentialsId: OPENSHIFT_TOKEN_ID, variable: 'OC_TOKEN')]) {
-                    sh """
-                        # Authenticate to the OpenShift cluster
-                        oc login --server=${OPENSHIFT_API_URL} --token=\${OC_TOKEN} --insecure-skip-tls-verify
-                        
-                        # Select the target project
+                    bat """
+                        oc login --server=${OPENSHIFT_API_URL} --token=${OC_TOKEN} --insecure-skip-tls-verify
                         oc project ${OPENSHIFT_PROJECT}
                         
-                        # Check if deployment already exists
-                        if oc get deployment ${APP_NAME} > /dev/null 2>&1; then
-                            echo "Updating existing deployment..."
-                            oc set image deployment/${APP_NAME} ${APP_NAME}=${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}
-                        else
-                            echo "Creating new application..."
+                        oc get deployment ${APP_NAME} >nul 2>&1
+                        if errorlevel 1 (
+                            echo Creating new application...
                             oc new-app --name=${APP_NAME} --docker-image=${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}
-                            
-                            # Create a route if it doesn't exist
-                            oc expose svc/${APP_NAME} || true
-                        fi
+                            oc expose svc/${APP_NAME}
+                        ) else (
+                            echo Updating existing deployment...
+                            oc set image deployment/${APP_NAME} ${APP_NAME}=${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_TAG}
+                        )
                         
-                        # Wait for rollout to complete
                         oc rollout status deployment/${APP_NAME}
                     """
                 }
