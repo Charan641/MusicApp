@@ -81,33 +81,35 @@ pipeline {
             steps {
                 echo '🚀 Deploying to EC2...'
 
-                // Combined credentials for DockerHub and EC2 SSH Key
                 withCredentials([
                     usernamePassword(credentialsId: DOCKER_CREDS_ID, passwordVariable: 'DOCKER_PW', usernameVariable: 'DOCKER_USER'),
                     sshUserPrivateKey(credentialsId: EC2_SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY_PATH')
                 ]) {
-                    bat """
-                    @echo off
-                    :: Safely set variables to handle special characters like &
-                    set "DPW=%DOCKER_PW%"
-                    set "DUSER=%DOCKER_USER%"
-                    set "M_URI=%MONGO_URI%"
-                    set "J_ID=%JAMENDO_CLIENT_ID%"
-
-                    :: Fix SSH key permissions for Windows OpenSSH
-                    icacls "%SSH_KEY_PATH%" /inheritance:r >nul
-                    icacls "%SSH_KEY_PATH%" /grant:r "%USERNAME%:(R)" >nul
+                    powershell """
+                    # 1. Fix SSH Key Permissions (PowerShell is more reliable for this)
+                    \$keyPath = "${env.SSH_KEY_PATH}"
+                    # Create a copy with strict permissions if needed, or just fix current
+                    \$acl = Get-Acl \$keyPath
+                    \$acl.SetAccessRuleProtection(\$true, \$false)
+                    Set-Acl \$keyPath \$acl
                     
-                    :: Run deployment on EC2
-                    ssh -i "%SSH_KEY_PATH%" -o StrictHostKeyChecking=no %EC2_USER%@%EC2_INSTANCE_IP% ^
-                    "echo '%DPW%' | docker login -u %DUSER% --password-stdin && ^
-                    docker pull %DOCKER_REGISTRY%/%APP_NAME%:%IMAGE_TAG% && ^
-                    docker stop %APP_NAME% || true && ^
-                    docker rm %APP_NAME% || true && ^
-                    docker run -d -p 3000:3000 --name %APP_NAME% ^
-                    -e MONGO_URI='%M_URI%' ^
-                    -e JAMENDO_CLIENT_ID='%J_ID%' ^
-                    %DOCKER_REGISTRY%/%APP_NAME%:%IMAGE_TAG%"
+                    \$currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+                    \$accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule(\$currentUser, "Read", "Allow")
+                    \$acl.AddAccessRule(\$accessRule)
+                    Set-Acl \$keyPath \$acl
+
+                    # 2. Build the SSH command string
+                    # Construction in PS avoids '&' breaking the shell
+                    \$docker_login = "echo '${env.DOCKER_PW}' | docker login -u ${env.DOCKER_USER} --password-stdin"
+                    \$docker_pull  = "docker pull ${env.DOCKER_REGISTRY}/${env.APP_NAME}:${env.IMAGE_TAG}"
+                    \$docker_stop  = "docker stop ${env.APP_NAME} || true"
+                    \$docker_rm    = "docker rm ${env.APP_NAME} || true"
+                    \$docker_run   = "docker run -d -p 3000:3000 --name ${env.APP_NAME} -e MONGO_URI='${env.MONGO_URI}' -e JAMENDO_CLIENT_ID='${env.JAMENDO_CLIENT_ID}' ${env.DOCKER_REGISTRY}/${env.APP_NAME}:${env.IMAGE_TAG}"
+
+                    \$remoteCmd = "\$docker_login && \$docker_pull && \$docker_stop && \$docker_rm && \$docker_run"
+
+                    # 3. Execute SSH
+                    ssh -i "\$keyPath" -o StrictHostKeyChecking=no ${env.EC2_USER}@${env.EC2_INSTANCE_IP} "\$remoteCmd"
                     """
                 }
             }
