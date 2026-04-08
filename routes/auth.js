@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const router = express.Router();
 const User = require('../models/User');
 const { sendEmail } = require('../utils/email');
@@ -39,18 +40,29 @@ router.post('/signup', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         try {
-            const newUser = new User({ username, email, password: hashedPassword, likedSongs: [] });
+            const verificationToken = crypto.randomBytes(32).toString('hex');
+            const newUser = new User({ 
+                username, 
+                email, 
+                password: hashedPassword, 
+                likedSongs: [],
+                isVerified: false,
+                verificationToken
+            });
             await newUser.save();
 
-            // ✅ Send welcome email asynchronously
+            const baseUrl = req.protocol + '://' + req.get('host');
+            const verificationUrl = `${baseUrl}/verify?token=${verificationToken}`;
+
+            // ✅ Send verification email asynchronously
             sendEmail({
                 to: email,
-                subject: 'Welcome to MusicApp!',
-                text: `Hello ${username},\n\nThank you for signing up for MusicApp! We hope you enjoy the best tunes.`,
-                html: `<h3>Hello ${username},</h3><p>Thank you for signing up for <strong>MusicApp</strong>!</p><p>We hope you enjoy the best tunes.</p>`
-            }).catch(err => console.error('Failed to send welcome email:', err));
+                subject: 'Verify your MusicApp account',
+                text: `Hello ${username},\n\nPlease verify your email by clicking the following link: ${verificationUrl}`,
+                html: `<h3>Hello ${username},</h3><p>Please verify your email by clicking the following link:</p><p><a href="${verificationUrl}">${verificationUrl}</a></p>`
+            }).catch(err => console.error('Failed to send verification email:', err));
 
-            res.redirect('/login');
+            res.render('login', { success: 'Signup successful! Please check your email to verify your account before logging in.' });
         } catch (saveErr) {
             console.error('DB SAVE FAIL:', saveErr.message);
             req.session.user = { _id: 'guest-' + Date.now(), username, email };
@@ -101,6 +113,10 @@ router.post('/login', async (req, res) => {
             return res.render('login', { error: 'Account not found. Please sign up first.' });
         }
 
+        if (user.isVerified === false) {
+            return res.render('login', { error: 'Please verify your email address. Check your inbox for the verification link.' });
+        }
+
         const match = await bcrypt.compare(password, user.password);
         if (!match) {
             return res.render('login', { error: 'Incorrect password' });
@@ -128,6 +144,32 @@ router.get('/logout', (req, res) => {
     req.session.destroy(() => {
         res.redirect('/login');
     });
+});
+
+/**
+ * ✅ VERIFY EMAIL ROUTE
+ */
+router.get('/verify', async (req, res) => {
+    try {
+        const { token } = req.query;
+        if (!token) {
+            return res.render('login', { error: 'Invalid or missing verification token.' });
+        }
+
+        const user = await User.findOne({ verificationToken: token });
+        if (!user) {
+            return res.render('login', { error: 'Verification link is invalid or has expired.' });
+        }
+
+        user.isVerified = true;
+        user.verificationToken = undefined;
+        await user.save();
+
+        res.render('login', { success: 'Your email has been successfully verified. You can now log in.' });
+    } catch (err) {
+        console.error('Verification error:', err);
+        res.render('login', { error: 'An unexpected error occurred during verification.' });
+    }
 });
 
 module.exports = router;

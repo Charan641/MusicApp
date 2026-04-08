@@ -8,6 +8,10 @@ block content
                 h2(style="margin-top: 15px; font-size: 2rem; font-weight: 600; color: white;") Welcome Back
                 p(style="color: var(--text-muted);") Sign in to your premium account
 
+            if success
+                .success-box(style="background: rgba(46, 204, 113, 0.1); border-left: 4px solid #2ecc71; padding: 12px; margin-bottom: 20px; border-radius: 8px;")
+                    p(style="color: #2ecc71; font-size: 0.9rem; margin: 0;") #{success}
+
             if error
                 .error-box(style="background: rgba(231, 76, 60, 0.1); border-left: 4px solid #e74c3c; padding: 12px; margin-bottom: 20px; border-radius: 8px;")
                     p(style="color: #e74c3c; font-size: 0.9rem; margin: 0;") #{error}
