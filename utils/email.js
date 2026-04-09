@@ -1,34 +1,29 @@
 const nodemailer = require('nodemailer');
 
 // Create a transporter using the settings from the .env file
-console.log('📧 Initializing Email Transporter with:', {
+console.log('📧 Audit: Email variables loaded:', {
   host: process.env.SMTP_HOST,
   port: process.env.SMTP_PORT,
   user: process.env.SMTP_USER,
+  passLength: process.env.SMTP_PASS ? process.env.SMTP_PASS.length : 0,
   from: process.env.FROM_EMAIL
 });
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: process.env.SMTP_PORT == 465, // true for 465, false for other ports
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: 465, // Using 465 for SSL (more stable for Gmail)
+  secure: true, 
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
   tls: {
-    rejectUnauthorized: false // Helps fix "Self-signed certificate" errors on EC2
+    rejectUnauthorized: false
   }
 });
 
 /**
  * Sends an email
- * @param {Object} options - Email options
- * @param {string} options.to - Recipient email address
- * @param {string} options.subject - Email subject
- * @param {string} options.text - Email plain text content
- * @param {string} [options.html] - Email HTML content (optional)
- * @returns {Promise} Resolves when email is sent
  */
 const sendEmail = async (options) => {
   try {
@@ -40,11 +35,14 @@ const sendEmail = async (options) => {
       html: options.html,
     };
 
+    console.log(`🚀 Attempting to send email to: ${options.to}...`);
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent: %s', info.messageId);
+    console.log('✅ Email sent successfully!');
+    console.log('📬 SMTP Response:', info.response);
+    console.log('🆔 Message ID:', info.messageId);
     return info;
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('❌ Nodemailer Error:', error.message);
     throw error;
   }
 };
