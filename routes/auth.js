@@ -62,7 +62,7 @@ router.post('/signup', async (req, res) => {
                     text: `Hello ${username},\n\nPlease verify your email by clicking the following link: ${verificationUrl}`,
                     html: `<h3>Hello ${username},</h3><p>Please verify your email by clicking the following link:</p><p><a href="${verificationUrl}">${verificationUrl}</a></p>`
                 });
-                res.render('login', { success: 'Signup successful! Please check your email to verify your account before logging in.' });
+                res.render('login', { success: `Signup successful! A verification link has been sent to: ${email}. Please check your inbox (and spam folder) before logging in.` });
             } catch (mailErr) {
                 console.error('❌ Email failed to send:', mailErr.message);
                 // Inform the user precisely why it failed
