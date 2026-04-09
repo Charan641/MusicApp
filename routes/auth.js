@@ -192,7 +192,8 @@ router.get('/debug-email', async (req, res) => {
     output += `   - SMTP_PORT: ${process.env.SMTP_PORT || 'NOT SET'}\n`;
     output += `   - SMTP_USER: ${process.env.SMTP_USER || 'MISSING'}\n`;
     output += `   - SMTP_PASS: ${process.env.SMTP_PASS ? 'PRESENT (Length: ' + process.env.SMTP_PASS.length + ')' : 'MISSING'}\n`;
-    output += `   - FROM_EMAIL: ${process.env.FROM_EMAIL || 'MISSING'}\n\n`;
+    output += `   - FROM_EMAIL: ${process.env.FROM_EMAIL || 'MISSING'}\n`;
+    output += `   - BASE_URL: ${process.env.BASE_URL || 'NOT SET (Defaulting to request host)'}\n\n`;
 
     // 2. Test Connection
     output += "2. Testing Connection (transporter.verify())...\n";

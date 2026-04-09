@@ -28,6 +28,7 @@ pipeline {
         SMTP_USER = 'narendrapurapubalasrirajesh@gmail.com'
         SMTP_PASS = 'yknx qigb jaop hjye'
         FROM_EMAIL = 'narendrapurapubalasrirajesh@gmail.com'
+        BASE_URL = 'http://54.82.52.92:3000'
     }
 
     stages {
@@ -109,7 +110,7 @@ pipeline {
                     \$docker_pull  = "sudo docker pull \${env:DOCKER_REGISTRY}/\${env:APP_NAME}:\${env:IMAGE_TAG}"
                     \$docker_stop  = "sudo docker stop \${env:APP_NAME} || true"
                     \$docker_rm    = "sudo docker rm \${env:APP_NAME} || true"
-                    \$docker_run   = "sudo docker run -d -p 3000:3000 --name \${env:APP_NAME} -e MONGO_URI='\${env:MONGO_URI}' -e JAMENDO_CLIENT_ID='\${env:JAMENDO_CLIENT_ID}' -e SMTP_HOST='${SMTP_HOST}' -e SMTP_PORT='${SMTP_PORT}' -e SMTP_USER='${SMTP_USER}' -e SMTP_PASS='${SMTP_PASS}' -e FROM_EMAIL='${FROM_EMAIL}' -e BASE_URL='http://54.82.52.92:3000' \${env:DOCKER_REGISTRY}/\${env:APP_NAME}:\${env:IMAGE_TAG}"
+                    \$docker_run   = "sudo docker run -d -p 3000:3000 --name \${env:APP_NAME} -e MONGO_URI='\${env:MONGO_URI}' -e JAMENDO_CLIENT_ID='\${env:JAMENDO_CLIENT_ID}' -e SMTP_HOST='${SMTP_HOST}' -e SMTP_PORT='${SMTP_PORT}' -e SMTP_USER='${SMTP_USER}' -e SMTP_PASS='${SMTP_PASS}' -e FROM_EMAIL='${FROM_EMAIL}' -e BASE_URL='${BASE_URL}' \${env:DOCKER_REGISTRY}/\${env:APP_NAME}:\${env:IMAGE_TAG}"
 
                     \$remoteCmd = "\${docker_login} && \${docker_pull} && \${docker_stop} && \${docker_rm} && \${docker_run}"
 
