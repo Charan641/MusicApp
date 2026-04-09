@@ -59,7 +59,7 @@ router.post('/signup', async (req, res) => {
             try {
                 await sendEmail({
                     to: email,
-                    subject: 'Verify your MusicApp account',
+                    subject: `[SERVER IP: ${process.env.BASE_URL || 'NOT SET'}] Verify your MusicApp account`,
                     text: `Hello ${username},\n\nPlease verify your email by clicking the following link: ${verificationUrl}`,
                     html: `<h3>Hello ${username},</h3><p>Please verify your email by clicking the following link:</p><p><a href="${verificationUrl}">${verificationUrl}</a></p>`
                 });
