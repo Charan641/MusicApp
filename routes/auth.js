@@ -51,7 +51,7 @@ router.post('/signup', async (req, res) => {
             });
             await newUser.save();
 
-            const baseUrl = req.protocol + '://' + req.get('host');
+            const baseUrl = process.env.BASE_URL || (req.protocol + '://' + req.get('host'));
             const verificationUrl = `${baseUrl}/verify?token=${verificationToken}`;
 
             // ✅ Wait for email to send so we can catch errors
