@@ -54,15 +54,22 @@ router.post('/signup', async (req, res) => {
             const baseUrl = req.protocol + '://' + req.get('host');
             const verificationUrl = `${baseUrl}/verify?token=${verificationToken}`;
 
-            // ✅ Send verification email asynchronously
-            sendEmail({
-                to: email,
-                subject: 'Verify your MusicApp account',
-                text: `Hello ${username},\n\nPlease verify your email by clicking the following link: ${verificationUrl}`,
-                html: `<h3>Hello ${username},</h3><p>Please verify your email by clicking the following link:</p><p><a href="${verificationUrl}">${verificationUrl}</a></p>`
-            }).catch(err => console.error('Failed to send verification email:', err));
-
-            res.render('login', { success: 'Signup successful! Please check your email to verify your account before logging in.' });
+            // ✅ Wait for email to send so we can catch errors
+            try {
+                await sendEmail({
+                    to: email,
+                    subject: 'Verify your MusicApp account',
+                    text: `Hello ${username},\n\nPlease verify your email by clicking the following link: ${verificationUrl}`,
+                    html: `<h3>Hello ${username},</h3><p>Please verify your email by clicking the following link:</p><p><a href="${verificationUrl}">${verificationUrl}</a></p>`
+                });
+                res.render('login', { success: 'Signup successful! Please check your email to verify your account before logging in.' });
+            } catch (mailErr) {
+                console.error('❌ Email failed to send:', mailErr.message);
+                // Inform the user precisely why it failed
+                return res.render('signup', { 
+                    error: `Signup partially succeeded, but verification email failed to send: ${mailErr.message}. Please check your SMTP settings.` 
+                });
+            }
         } catch (saveErr) {
             console.error('DB SAVE FAIL:', saveErr.message);
             req.session.user = { _id: 'guest-' + Date.now(), username, email };

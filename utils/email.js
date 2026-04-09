@@ -1,6 +1,13 @@
 const nodemailer = require('nodemailer');
 
 // Create a transporter using the settings from the .env file
+console.log('📧 Initializing Email Transporter with:', {
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  user: process.env.SMTP_USER,
+  from: process.env.FROM_EMAIL
+});
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: process.env.SMTP_PORT,
@@ -9,6 +16,9 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  tls: {
+    rejectUnauthorized: false // Helps fix "Self-signed certificate" errors on EC2
+  }
 });
 
 /**
