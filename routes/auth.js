@@ -179,4 +179,43 @@ router.get('/verify', async (req, res) => {
     }
 });
 
+/**
+ * 🛠️ DIAGNOSTIC ROUTE - FOR DEBUGGING ONLY
+ */
+const { transporter } = require('../utils/email');
+router.get('/debug-email', async (req, res) => {
+    let output = "=== 📧 EMAIL DIAGNOSTICS ===\n\n";
+    
+    // 1. Check Variables
+    output += "1. Environment Check:\n";
+    output += `   - SMTP_HOST: ${process.env.SMTP_HOST || 'NOT SET (Defaulting to smtp.gmail.com)'}\n`;
+    output += `   - SMTP_PORT: ${process.env.SMTP_PORT || 'NOT SET'}\n`;
+    output += `   - SMTP_USER: ${process.env.SMTP_USER || 'MISSING'}\n`;
+    output += `   - SMTP_PASS: ${process.env.SMTP_PASS ? 'PRESENT (Length: ' + process.env.SMTP_PASS.length + ')' : 'MISSING'}\n`;
+    output += `   - FROM_EMAIL: ${process.env.FROM_EMAIL || 'MISSING'}\n\n`;
+
+    // 2. Test Connection
+    output += "2. Testing Connection (transporter.verify())...\n";
+    try {
+        await transporter.verify();
+        output += "   ✅ SUCCESS: Connection verified!\n\n";
+        
+        // 3. Test Send
+        output += "3. Testing Test Mail Send...\n";
+        await transporter.sendMail({
+            from: process.env.FROM_EMAIL,
+            to: process.env.SMTP_USER,
+            subject: 'MusicApp Debug Result',
+            text: 'If you see this, email is working!'
+        });
+        output += "   ✅ SUCCESS: Test email sent to " + process.env.SMTP_USER + "\n";
+    } catch (err) {
+        output += `   ❌ ERROR: ${err.message}\n`;
+        if (err.stack) output += `\nStack Trace:\n${err.stack}\n`;
+    }
+
+    output += "\n=== DIAGNOSTICS COMPLETE ===";
+    res.type('text/plain').send(output);
+});
+
 module.exports = router;
