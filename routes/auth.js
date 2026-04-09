@@ -51,15 +51,15 @@ router.post('/signup', async (req, res) => {
             });
             await newUser.save();
 
-            const baseUrl = 'http://54.82.52.92:3000';
+            const baseUrl = process.env.BASE_URL || (req.protocol + '://' + req.get('host'));
             const verificationUrl = `${baseUrl}/verify?token=${verificationToken}`;
 
             // ✅ Wait for email to send so we can catch errors
-            console.log(`✉️ Sending [FINAL FIX] email with baseUrl: ${baseUrl}`);
+            console.log(`✉️ Sending [DYNAMIC] email with baseUrl: ${baseUrl}`);
             try {
                 await sendEmail({
                     to: email,
-                    subject: '[FINAL FIX] Verify your MusicApp account',
+                    subject: 'Verify your MusicApp account',
                     text: `Hello ${username},\n\nPlease verify your email by clicking the following link: ${verificationUrl}`,
                     html: `<h3>Hello ${username},</h3><p>Please verify your email by clicking the following link:</p><p><a href="${verificationUrl}">${verificationUrl}</a></p>`
                 });
