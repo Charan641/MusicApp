@@ -11,7 +11,7 @@ console.log('📧 Audit: Email variables loaded:', {
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: 465, // Using 465 for SSL (more stable for Gmail)
+  port: 465, 
   secure: true, 
   auth: {
     user: process.env.SMTP_USER,

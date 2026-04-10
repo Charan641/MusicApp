@@ -14,7 +14,7 @@ pipeline {
         SONAR_PROJECT_KEY = 'musicapp'
         
         // EC2
-        EC2_INSTANCE_IP = '54.82.52.92'
+        EC2_INSTANCE_IP = '54.86.160.84'
         EC2_USER = 'ubuntu'
         EC2_SSH_CREDENTIALS_ID = 'ec2-ssh-key'
         
@@ -28,7 +28,7 @@ pipeline {
         SMTP_USER = 'narendrapurapubalasrirajesh@gmail.com'
         SMTP_PASS = 'yknx qigb jaop hjye'
         FROM_EMAIL = 'narendrapurapubalasrirajesh@gmail.com'
-        BASE_URL = 'http://54.82.52.92:3000'
+        BASE_URL = 'http://54.86.160.84:3000'
     }
 
     stages {

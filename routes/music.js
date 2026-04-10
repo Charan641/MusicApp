@@ -5,18 +5,13 @@ const User = require('../models/User');
 
 const CLIENT_ID = process.env.JAMENDO_CLIENT_ID;
 
-// 🔐 AUTH MIDDLEWARE
 function isAuthenticated(req, res, next) {
     if (req.session.user) return next();
     res.redirect('/login');
 }
 
-// 🎵 In-memory playlist
 let playlist = [];
 
-/**
- * 🎧 HOME + SEARCH
- */
 router.get('/', isAuthenticated, async (req, res) => {
     try {
         const searchQuery = req.query.search || '';
@@ -37,9 +32,6 @@ router.get('/', isAuthenticated, async (req, res) => {
     }
 });
 
-/**
- * 🎵 ADD TO PLAYLIST
- */
 router.post('/playlist', isAuthenticated, (req, res) => {
     const song = req.body;
     if (!song || !song.id) return res.status(400).json({ success: false });
@@ -48,9 +40,6 @@ router.post('/playlist', isAuthenticated, (req, res) => {
     res.json({ success: true, playlist });
 });
 
-/**
- * ❤️ LIKE / UNLIKE SONG — saves to MongoDB + session
- */
 router.post('/like', isAuthenticated, async (req, res) => {
     try {
         const { songId, title, artist, audioUrl, image } = req.body;
@@ -93,9 +82,6 @@ router.post('/like', isAuthenticated, async (req, res) => {
     }
 });
 
-/**
- * ❤️ FAVORITES PAGE
- */
 router.get('/favorites', isAuthenticated, async (req, res) => {
     try {
         res.render('favorites', {
@@ -109,9 +95,6 @@ router.get('/favorites', isAuthenticated, async (req, res) => {
     }
 });
 
-/**
- * 🔍 RECOMMENDATIONS PAGE
- */
 router.get('/recommendations/:artist', isAuthenticated, async (req, res) => {
     try {
         const artist = decodeURIComponent(req.params.artist);
@@ -131,9 +114,6 @@ router.get('/recommendations/:artist', isAuthenticated, async (req, res) => {
     }
 });
 
-/**
- * 🔄 API: SIMILAR TRACKS (for queue button)
- */
 router.get('/api/similar', isAuthenticated, async (req, res) => {
     try {
         const artist = req.query.artist || '';
@@ -145,7 +125,6 @@ router.get('/api/similar', isAuthenticated, async (req, res) => {
             tracks = response.data.results || [];
         }
 
-        // Fallback: popular tracks
         if (tracks.length === 0) {
             const fallbackUrl = `https://api.jamendo.com/v3.0/tracks/?client_id=${CLIENT_ID}&format=json&limit=15&order=popularity_total`;
             const fallbackRes = await axios.get(fallbackUrl);
@@ -159,9 +138,6 @@ router.get('/api/similar', isAuthenticated, async (req, res) => {
     }
 });
 
-/**
- * 🎵 VIEW PLAYLIST
- */
 router.get('/playlist', isAuthenticated, (req, res) => {
     res.render('playlist', {
         title: 'My Playlist',
